@@ -115,9 +115,9 @@ app.post("/api/chat", async (req, res) => {
     res.json({ reply });
   } catch (error) {
     console.error("Error /api/chat:", error?.message || error);
-    res.status(500).json({
-      error: "No se pudo generar respuesta",
-      reply: "No pude responder ahora. Si queres, te atiendo por WhatsApp."
+    res.json({
+      reply: fallbackReply(message),
+      mode: "fallback"
     });
   }
 });
