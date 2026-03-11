@@ -71,6 +71,27 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, model: MODEL, business: BUSINESS.nombre });
 });
 
+// Endpoint simple para probar desde navegador (GET)
+app.get("/api/chat-test", async (req, res) => {
+  const message = String(req.query?.q || "hola").trim();
+  try {
+    if (!client) {
+      return res.json({ reply: fallbackReply(message), mode: "fallback" });
+    }
+    const response = await client.responses.create({
+      model: MODEL,
+      input: [
+        { role: "system", content: buildSystemPrompt() },
+        { role: "user", content: message }
+      ]
+    });
+    const reply = response.output_text || fallbackReply(message);
+    res.json({ reply });
+  } catch (_error) {
+    res.json({ reply: fallbackReply(message), mode: "fallback" });
+  }
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
     const message = String(req.body?.message || "").trim();
