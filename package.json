@@ -1,0 +1,17 @@
+{
+  "name": "glow-demo-openai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend local para conectar GLOW Demo con OpenAI",
+  "main": "glow_openai_server.js",
+  "scripts": {
+    "start": "node glow_openai_server.js",
+    "glow:api": "node glow_openai_server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "openai": "^4.56.0"
+  }
+}

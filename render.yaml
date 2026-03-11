@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: glow-openai-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: PORT
+        value: 3001
