@@ -8,6 +8,7 @@ require("dotenv").config();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
+app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 3001;
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
@@ -49,21 +50,11 @@ const client = hasApiKey ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : 
 
 function fallbackReply(message) {
   const t = String(message || "").toLowerCase();
-  if (/(oferta|promo|promoci)/.test(t)) {
-    return `Hoy tenemos ofertas activas: ${BUSINESS.ofertas}. Tambien podes participar del sorteo: ${BUSINESS.sorteo}`;
-  }
-  if (/(sorteo|premio|particip)/.test(t)) {
-    return `${BUSINESS.sorteo} Si queres, tambien te paso las ofertas vigentes.`;
-  }
-  if (/(hora|horario|abre|cierran)/.test(t)) {
-    return `Nuestro horario es ${BUSINESS.horario}.`;
-  }
-  if (/(ubic|donde|direccion)/.test(t)) {
-    return `Estamos en ${BUSINESS.ubicacion}, ${BUSINESS.ciudad}.`;
-  }
-  if (/(whats|contact|telefono)/.test(t)) {
-    return `Claro, escribinos por WhatsApp: https://wa.me/${BUSINESS.whatsapp}`;
-  }
+  if (/(oferta|promo|promoci)/.test(t)) return `Hoy tenemos ofertas activas: ${BUSINESS.ofertas}. Tambien podes participar del sorteo: ${BUSINESS.sorteo}`;
+  if (/(sorteo|premio|particip)/.test(t)) return `${BUSINESS.sorteo} Si queres, tambien te paso las ofertas vigentes.`;
+  if (/(hora|horario|abre|cierran)/.test(t)) return `Nuestro horario es ${BUSINESS.horario}.`;
+  if (/(ubic|donde|direccion)/.test(t)) return `Estamos en ${BUSINESS.ubicacion}, ${BUSINESS.ciudad}.`;
+  if (/(whats|contact|telefono)/.test(t)) return `Claro, escribinos por WhatsApp: https://wa.me/${BUSINESS.whatsapp}`;
   return `Te ayudo con gusto. Puedo contarte ofertas, sorteo, horario y ubicacion. WhatsApp: https://wa.me/${BUSINESS.whatsapp}`;
 }
 
@@ -71,13 +62,22 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, model: MODEL, business: BUSINESS.nombre });
 });
 
-// Endpoint simple para probar desde navegador (GET)
+app.get("/", (_req, res) => {
+  const candidates = [
+    "glow_demo_chat_ejemplo3_cooperativa.html",
+    "glow_demo_chat_ejemplo2.html",
+    "glow_demo_chat.html",
+    "prueba.html"
+  ];
+  const file = candidates.find((name) => fs.existsSync(path.join(__dirname, name)));
+  if (file) return res.sendFile(path.join(__dirname, file));
+  return res.status(200).send("<h1>GLOW API activa</h1><p>Usa <code>/api/health</code>.</p>");
+});
+
 app.get("/api/chat-test", async (req, res) => {
   const message = String(req.query?.q || "hola").trim();
   try {
-    if (!client) {
-      return res.json({ reply: fallbackReply(message), mode: "fallback" });
-    }
+    if (!client) return res.json({ reply: fallbackReply(message), mode: "fallback" });
     const response = await client.responses.create({
       model: MODEL,
       input: [
@@ -93,15 +93,12 @@ app.get("/api/chat-test", async (req, res) => {
 });
 
 app.post("/api/chat", async (req, res) => {
+  let message = "";
   try {
-    const message = String(req.body?.message || "").trim();
-    if (!message) {
-      return res.status(400).json({ error: "message requerido" });
-    }
+    message = String(req.body?.message || "").trim();
+    if (!message) return res.status(400).json({ error: "message requerido" });
 
-    if (!client) {
-      return res.json({ reply: fallbackReply(message), mode: "fallback" });
-    }
+    if (!client) return res.json({ reply: fallbackReply(message), mode: "fallback" });
 
     const response = await client.responses.create({
       model: MODEL,
@@ -115,10 +112,7 @@ app.post("/api/chat", async (req, res) => {
     res.json({ reply });
   } catch (error) {
     console.error("Error /api/chat:", error?.message || error);
-    res.json({
-      reply: fallbackReply(message),
-      mode: "fallback"
-    });
+    res.json({ reply: fallbackReply(message), mode: "fallback" });
   }
 });
 
